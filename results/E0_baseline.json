@@ -1,0 +1,13 @@
+{
+  "config": "configs/E0_baseline.toml",
+  "settings": 1,
+  "games": 100000,
+  "seed": 2026,
+  "commit": "0b1a05bfe0adabe2d844bacb7b3925710a67da57",
+  "dirty": false,
+  "run_at": "2026-10-08T02:24:32+00:00",
+  "runtime_s": 2.4,
+  "python": "3.13.1",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1"
+}
