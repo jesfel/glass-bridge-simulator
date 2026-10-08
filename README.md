@@ -70,8 +70,10 @@ src/glass_bridge/
   draws.py        random numbers, drawn up front per stream (same bridges across scenarios)
   exact.py        exact baseline odds (binomial and Markov chain)
   experiments.py  batch runner, summaries, sweeps, command line
+  figures.py      article figures from results/ (needs the `figures` extra)
 configs/          one TOML file per experiment
 results/          sweep summaries (CSV) and provenance (JSON)
+figures/          article figures (PNG)
 tests/            exact-odds validation, rule checks, reproducibility
 ```
 
