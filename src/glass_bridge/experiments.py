@@ -120,7 +120,7 @@ def _run_setting(job: tuple[Params, int, int]) -> dict[str, float]:
 def _git_state() -> dict[str, object]:
     root = Path(__file__).resolve().parents[2]
     git = lambda *args: subprocess.run(["git", *args], cwd=root, capture_output=True, text=True).stdout.strip()
-    return {"commit": git("rev-parse", "HEAD") or None, "dirty": bool(git("status", "--porcelain"))}
+    return {"commit": git("rev-parse", "HEAD") or None, "dirty": bool(git("status", "--porcelain", "--untracked-files=no"))}
 
 
 def run_sweep(config: str | Path, out_dir: str | Path = "results", workers: int | None = None,
