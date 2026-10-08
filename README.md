@@ -31,6 +31,7 @@ game = trace(Params(n_pushers=5), seed=3)   # one game, every event logged
   Only the leader faces an unknown pane.
 - **Clock:** 16 minutes. Anyone still on the bridge at 960 s is eliminated.
 - **Hesitation:** at an unknown pane the leader takes a lognormal decision delay (median 20 s, σ = 1).
+  `delay="gamma"` swaps in a gamma delay with the same median and mean, as a robustness check.
   Pressure scales the median by `exp(β × fraction of clock used)`: β < 0 players rush, β > 0 they freeze.
   Walking a known step takes 3 s.
 - **Pushing:** a fixed number of players are pushers, placed at random. From minute 7 on, a pusher
@@ -42,15 +43,36 @@ game = trace(Params(n_pushers=5), seed=3)   # one game, every event logged
 
 Every parameter lives in `Params` (`src/glass_bridge/params.py`).
 
+## Experiments
+
+Each file in `configs/` is one experiment: a seed, games per setting, a `base`, a `grid` (every
+combination is run) and optional `[[vary]]` blocks (one parameter at a time around the defaults).
+
+```bash
+.venv/Scripts/python -m glass_bridge.experiments configs/*.toml
+```
+
+This writes `results/<experiment>.csv` (one row per setting: parameters, mean survivors and standard
+error, the survivor distribution, survival by position, causes of death, pusher vs non-pusher survival)
+and `results/<experiment>.json` (seed, git commit, versions, run time). Re-running gives the same numbers.
+
+**Same bridges across scenarios.** Every random number a game needs is drawn up front from its own
+stream: bridge, leader's guesses, delays, pusher order, push struggle, pane contact. Game *g* under a
+seed sees the same bridge, guesses and delays in every scenario, and adding a pusher keeps the
+others in place, so differences between settings come from the rules, not from luck.
+
 ## Layout
 
 ```text
 src/glass_bridge/
   params.py       parameters and outcome codes
-  engine.py       one game, seeded, with an event log
+  engine.py       one game, with an event log
+  draws.py        random numbers, drawn up front per stream (same bridges across scenarios)
   exact.py        exact baseline odds (binomial and Markov chain)
-  experiments.py  batch runner, summaries, command line
-tests/            exact-odds validation and rule checks
+  experiments.py  batch runner, summaries, sweeps, command line
+configs/          one TOML file per experiment
+results/          sweep summaries (CSV) and provenance (JSON)
+tests/            exact-odds validation, rule checks, reproducibility
 ```
 
 ## Prior work

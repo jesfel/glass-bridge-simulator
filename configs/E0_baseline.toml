@@ -1,0 +1,7 @@
+# Baseline check: ideal play (no clock, no pushers) against the exact odds. Fig 1.
+seed = 2026
+games = 100_000
+
+[base]
+clock = inf
+n_pushers = 0

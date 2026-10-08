@@ -24,9 +24,10 @@ class Params:
     clock: float = 960.0      # seconds; math.inf = no clock
     t_move: float = 3.0       # seconds per known step
 
-    # Hesitation: lognormal decision delay at an unknown pane
+    # Hesitation: decision delay at an unknown pane
     d0: float = 20.0          # median delay with no pressure (s)
     sigma: float = 1.0        # spread of log delay
+    delay: str = "lognormal"  # or "gamma": same median and mean, robustness check
     beta: float = 0.0         # pressure: <0 rush, 0 none, >0 freeze
 
     # Pushing
@@ -49,6 +50,8 @@ class Params:
         for name in ("p_land", "p_drag", "p_backfire", "p_contact"):
             if not 0.0 <= getattr(self, name) <= 1.0:
                 raise ValueError(f"{name} must be in [0, 1]")
+        if self.delay not in ("lognormal", "gamma"):
+            raise ValueError("delay must be 'lognormal' or 'gamma'")
         if self.clock <= 0 or self.d0 <= 0 or self.sigma < 0:
             raise ValueError("clock and d0 must be positive, sigma non-negative")
 

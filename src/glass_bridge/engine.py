@@ -10,8 +10,7 @@ import math
 from dataclasses import dataclass, field
 from typing import NamedTuple
 
-import numpy as np
-
+from .draws import GameDraws, draw_batch
 from .params import Outcome, Params
 
 
@@ -36,10 +35,11 @@ class GameResult:
         return sum(o == Outcome.SURVIVED for o in self.outcome)
 
 
-def play_game(p: Params, rng: np.random.Generator, log: bool = True) -> GameResult:
+def play_game(p: Params, d: GameDraws, log: bool = True) -> GameResult:
     N, P, T = p.n_steps, p.n_players, p.clock
-    bridge = tuple(int(x) for x in rng.integers(0, 2, size=N))
-    pushers = frozenset(int(x) for x in rng.choice(P, size=p.n_pushers, replace=False)) if p.n_pushers else frozenset()
+    bridge = tuple(d.bridge)
+    pushers = frozenset(d.order[: p.n_pushers])
+    n_hesitations = n_pushes = 0
 
     outcome: list[Outcome | None] = [None] * P
     when = [math.nan] * P
@@ -62,7 +62,7 @@ def play_game(p: Params, rng: np.random.Generator, log: bool = True) -> GameResu
         """Leader (or pushed victim) lands on the next pane. Returns True if they survive."""
         nonlocal frontier, pos, queue
         step = frontier + 1
-        if rng.integers(0, 2) == bridge[step - 1]:
+        if d.guess[step - 1] == bridge[step - 1]:
             frontier = pos = step
             ev(t, "safe", player, step)
             return True
@@ -93,7 +93,8 @@ def play_game(p: Params, rng: np.random.Generator, log: bool = True) -> GameResu
         t, pos = t_walk, frontier
 
         u = 0.0 if math.isinf(T) else min(t / T, 1.0)
-        delay = float(rng.lognormal(math.log(p.d0) + p.beta * u, p.sigma))
+        delay = p.d0 * math.exp(p.beta * u) * d.delay[n_hesitations]
+        n_hesitations += 1
         ev(t, "hesitate", leader, pos + 1, delay)
         t_decide = t + delay
 
@@ -102,10 +103,11 @@ def play_game(p: Params, rng: np.random.Generator, log: bool = True) -> GameResu
             if t_push < t_decide and t_push + p.t_push <= T:
                 pusher = queue[1]
                 t = t_push + p.t_push
-                r = rng.random()
+                r, contact = d.struggle[n_pushes], d.contact[n_pushes] < p.p_contact
+                n_pushes += 1
                 if r < p.p_land:
                     ev(t, "push", pusher, pos + 1, leader)
-                    if rng.random() < p.p_contact:
+                    if contact:
                         jump(leader, t, Outcome.PUSHED)
                     else:  # off the side: no pane revealed
                         eliminate(leader, t, Outcome.PUSHED, pos + 1)
@@ -115,7 +117,7 @@ def play_game(p: Params, rng: np.random.Generator, log: bool = True) -> GameResu
                 if r < p.p_land + p.p_drag:
                     eliminate(leader, t, Outcome.DRAG, pos + 1)
                     eliminate(pusher, t, Outcome.DRAG, pos + 1)
-                    if rng.random() < p.p_contact:
+                    if contact:
                         frontier += 1
                         ev(t, "reveal", leader, frontier)
                     queue = queue[2:]
@@ -136,6 +138,6 @@ def play_game(p: Params, rng: np.random.Generator, log: bool = True) -> GameResu
     return GameResult(outcome, when, pushers, bridge, events)
 
 
-def trace(p: Params, seed: int) -> GameResult:
-    """Reproducible single game with a full event log."""
-    return play_game(p, np.random.default_rng(seed), log=True)
+def trace(p: Params, seed: int, game: int = 0) -> GameResult:
+    """Game number `game` of run_batch(p, ..., seed), replayed with a full event log."""
+    return play_game(p, draw_batch(p, game + 1, seed).game(game), log=True)

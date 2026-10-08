@@ -7,7 +7,7 @@ name = "glass-bridge"
 version = "0.1.0"
 description = "Monte Carlo simulator of the Squid Game Glass Bridge, with human behavior: pushing, hesitation and a clock."
 requires-python = ">=3.11"
-dependencies = ["numpy>=1.26"]
+dependencies = ["numpy>=1.26", "scipy>=1.11"]
 
 [project.optional-dependencies]
 dev = ["pytest>=8"]
