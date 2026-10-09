@@ -300,6 +300,37 @@ def fig_clock(results: Path):
     return fig
 
 
+def fig_distribution_hesitation(results: Path):
+    """Article 1 version (D19): one model of hesitation, constant all game (E9), at the show's clock."""
+    rows = load("E9_clock_x_decision_time", results)
+    k = np.arange(N_PLAYERS + 1)
+    delays = (15, 20, 40)
+    fig, axes = plt.subplots(1, 3, figsize=(12, 5.2), sharey=True)
+    for ax, d in zip(axes, delays):
+        r = one(rows, d0=float(d), clock=SHOW_CLOCK)
+        p = np.array([r[f"p_{i}_survivors"] for i in k]) * 100
+        slow = d == delays[-1]
+        ax.bar(k, p, width=0.75, color=[ORANGE if (slow and i == 0) else GRAY_LIGHT for i in k])
+        ax.set_title(f"{d} seconds per decision\n{r['mean_survivors']:.1f} survivors on average", loc="left",
+                     color=ORANGE if slow else INK, linespacing=1.4)
+        ax.set_xticks([0, 3, 7, 10, 16])
+        ax.set_xlabel("Survivors in one game")
+        if slow:
+            ax.annotate(f"nobody survives\nin {p[0]:.0f}% of games", (0.5, p[0] * 0.95), xytext=(3, p[0] * 0.8),
+                        fontsize=9.5, color=ORANGE, fontweight="bold", va="top")
+    axes[0].set_yticks([0, 20, 40, 60, 80], ["0%", "20%", "40%", "60%", "80%"])
+    axes[0].set_ylabel("Share of games")
+    r20 = one(rows, d0=20.0, clock=SHOW_CLOCK)
+    headline(fig, "Slow down, and the whole group dies",
+             f"At 20 seconds per decision, nobody survives in {r20['p_0_survivors']:.0%} of games. Double it, and "
+             "four games in five end with nobody alive.\nThe average hides it: hesitation doesn't trim the survivors, "
+             "it wipes out whole games.",
+             "16-minute clock, no pushers; the leader's typical (median) decision time stays the same all game. "
+             "100,000 games each. Results: E9_clock_x_decision_time.csv")
+    fig.subplots_adjust(left=0.07, right=0.98, bottom=0.14, top=0.67, wspace=0.08)
+    return fig
+
+
 def fig_distribution(results: Path):
     rows = load("E3_clock", results)
     k = np.arange(N_PLAYERS + 1)
@@ -430,7 +461,8 @@ FIGURES = {
     "fig3_breakeven": fig_breakeven,
     "fig4_pusher_gain": fig_pusher_gain,
     "fig5_clock": fig_clock,
-    "fig6_distribution": fig_distribution,
+    "fig6_distribution": fig_distribution_hesitation,
+    "fig6b_distribution_pressure": fig_distribution,
     "fig7_hesitation_dial": fig_hesitation_dial,
     "fig2_3_pushers_and_breakeven": fig_pushers_and_breakeven,
     "fig8_wipeout_map": fig_wipeout_map,
