@@ -62,9 +62,11 @@ def cost_per_pusher(rows: list[dict], **where) -> float:
 # ---- Layout helpers -------------------------------------------------------------------------
 
 def headline(fig, title: str, subtitle: str, source: str) -> None:
+    """Title and subtitle on the image. The source note stays off the image (article version)
+    and goes to figures/SOURCES.md, so every figure still traces to its results file."""
     fig.text(0.012, 0.975, title, ha="left", va="top", fontsize=15, fontweight="bold", color=INK)
     fig.text(0.012, 0.905, subtitle, ha="left", va="top", fontsize=10.5, color=INK_2, linespacing=1.4)
-    fig.text(0.012, 0.012, source, ha="left", va="bottom", fontsize=8.5, color=GRAY)
+    fig.gb_title, fig.gb_source = title, source
 
 
 def end_labels(ax, items: list[tuple[float, float, str, str]], min_gap: float, dx: float) -> None:
@@ -112,6 +114,18 @@ def fig_baseline(results: Path):
 
 def fig_pushers(results: Path):
     rows = load("E1_pushers", results)
+    fig, ax = plt.subplots(figsize=(10, 5.8))
+    draw_pushers(ax, rows)
+    headline(fig, "Hesitating costs more lives than pushing",
+             "Every pusher lowers the number of survivors. The one exception: a frozen group, when each push\n"
+             "lands on the next pane and shows everyone where to step. Half of pushes reveal a pane unless noted.",
+             "100,000 games per point; 16-minute clock, pushing from minute 7. "
+             "\"Per pusher\" = slope of the line. Results: E1_pushers.csv")
+    fig.subplots_adjust(left=0.07, right=0.76, top=0.77, bottom=0.13)
+    return fig
+
+
+def draw_pushers(ax, rows: list[dict]) -> None:
     n = np.arange(9)
     x = n / N_PLAYERS * 100
     lines = [  # (pressure, contact, color, style, label)
@@ -120,7 +134,6 @@ def fig_pushers(results: Path):
         (FREEZE, 0.5, ORANGE, "-", "Freeze"),
         (FREEZE, 1.0, ORANGE, (0, (4, 2)), "Freeze, every push\nreveals the next pane"),
     ]
-    fig, ax = plt.subplots(figsize=(10, 5.8))
     ax.axvspan(31.25, 40, color=BAND, zorder=0)
     ax.text(35.6, 0.15, "the show and\neconomic games\n(31–40%)", ha="center", va="bottom", fontsize=8.5, color=GRAY)
     labels = []
@@ -140,36 +153,13 @@ def fig_pushers(results: Path):
     ax.set_ylim(0, 7.5)
     ax.set_xlabel("Pushers among the 16 players")
     ax.set_ylabel("Survivors, on average")
-    headline(fig, "Hesitating costs more lives than pushing",
-             "Every pusher lowers the number of survivors. The one exception: a frozen group, when each push\n"
-             "lands on the next pane and shows everyone where to step. Half of pushes reveal a pane unless noted.",
-             "100,000 games per point; 16-minute clock, pushing from minute 7. "
-             "\"Per pusher\" = slope of the line. Results: E1_pushers.csv")
-    fig.subplots_adjust(left=0.07, right=0.76, top=0.77, bottom=0.13)
-    return fig
 
 
 def fig_breakeven(results: Path):
     rows = load("E1_pushers", results)
-    n, contact = np.arange(1, 9), np.round(np.arange(0, 1.01, 0.1), 1)
-    x, y = n / N_PLAYERS * 100, contact * 100
     fig, axes = plt.subplots(1, 3, figsize=(12, 5), sharey=True)
-    cmap = LinearSegmentedColormap.from_list("div", [RED, NEUTRAL, BLUE])
-    norm = TwoSlopeNorm(vcenter=0, vmin=-2.0, vmax=2.0)
     for ax, beta in zip(axes, (RUSH, NONE, FREEZE)):
-        base = one(rows, beta=beta, n_pushers=0, p_contact=0.0)["mean_survivors"]
-        z = np.array([[one(rows, beta=beta, n_pushers=k, p_contact=c)["mean_survivors"] - base for k in n]
-                      for c in contact])
-        im = ax.pcolormesh(x, y, z, cmap=cmap, norm=norm, shading="nearest", edgecolors=SURFACE, linewidth=1.5)
-        outline_positive(ax, x, y, z)
-        ax.set_title(PRESSURE[beta], loc="left", color=ORANGE if beta == FREEZE else INK)
-        ax.set_xticks([10, 20, 30, 40, 50], ["10%", "20%", "30%", "40%", "50%"])
-        ax.set_xlabel("Pushers among the 16 players")
-        ax.grid(False)
-        ax.tick_params(left=False, bottom=False)
-        if (z > 0).any():
-            ax.text(x.mean(), 108, "pushing helps here", ha="center", va="bottom", fontsize=9.5,
-                    color=BLUE, fontweight="bold", clip_on=False)
+        im = draw_breakeven(ax, rows, beta)
     axes[0].set_yticks([0, 20, 40, 60, 80, 100], ["0%", "20%", "40%", "60%", "80%", "100%"])
     axes[0].set_ylabel("Pushes that reveal the next pane")
     cb = fig.colorbar(im, cax=fig.add_axes((0.905, 0.16, 0.012, 0.6)))
@@ -181,6 +171,51 @@ def fig_breakeven(results: Path):
              "Change in mean survivors vs no pushers; 100,000 games per cell, same bridges in every cell. "
              "Results: E1_pushers.csv")
     fig.subplots_adjust(left=0.07, right=0.89, bottom=0.16, top=0.72, wspace=0.08)
+    return fig
+
+
+def draw_breakeven(ax, rows: list[dict], beta: float, note: bool = True):
+    """Heatmap of survivors gained or lost vs no pushers, for one pressure scenario. Returns the mesh."""
+    n, contact = np.arange(1, 9), np.round(np.arange(0, 1.01, 0.1), 1)
+    x, y = n / N_PLAYERS * 100, contact * 100
+    cmap = LinearSegmentedColormap.from_list("div", [RED, NEUTRAL, BLUE])
+    norm = TwoSlopeNorm(vcenter=0, vmin=-2.0, vmax=2.0)
+    base = one(rows, beta=beta, n_pushers=0, p_contact=0.0)["mean_survivors"]
+    z = np.array([[one(rows, beta=beta, n_pushers=k, p_contact=c)["mean_survivors"] - base for k in n]
+                  for c in contact])
+    im = ax.pcolormesh(x, y, z, cmap=cmap, norm=norm, shading="nearest", edgecolors=SURFACE, linewidth=1.5)
+    outline_positive(ax, x, y, z)
+    ax.set_title(PRESSURE[beta], loc="left", color=ORANGE if beta == FREEZE else INK)
+    ax.set_xticks([10, 20, 30, 40, 50], ["10%", "20%", "30%", "40%", "50%"])
+    ax.set_xlabel("Pushers among the 16 players")
+    ax.grid(False)
+    ax.tick_params(left=False, bottom=False)
+    if note and (z > 0).any():
+        ax.text(x.mean(), 108, "pushing helps here", ha="center", va="bottom", fontsize=9.5,
+                color=BLUE, fontweight="bold", clip_on=False)
+    return im
+
+
+def fig_pushers_and_breakeven(results: Path):
+    """Figs 2 and 3 side by side: the cost of pushers, and where (under freeze) pushing pays."""
+    rows = load("E1_pushers", results)
+    fig = plt.figure(figsize=(15, 6.2))
+    left = fig.add_axes((0.05, 0.13, 0.40, 0.6))
+    right = fig.add_axes((0.665, 0.13, 0.26, 0.6))
+    draw_pushers(left, rows)
+    left.set_title("Survivors as pushers are added", loc="left")
+    im = draw_breakeven(right, rows, FREEZE, note=False)
+    right.set_title("Frozen group: pushing helps inside the blue line", loc="left", color=ORANGE)
+    right.set_yticks([0, 20, 40, 60, 80, 100], ["0%", "20%", "40%", "60%", "80%", "100%"])
+    right.set_ylabel("Pushes that reveal the next pane")
+    cb = fig.colorbar(im, cax=fig.add_axes((0.935, 0.13, 0.008, 0.6)))
+    cb.set_label("Survivors gained (+) or lost (−) vs no pushers", color=INK_2)
+    cb.outline.set_visible(False)
+    headline(fig, "Hesitating costs more lives than pushing",
+             "Every pusher lowers the number of survivors, except in a frozen group when most pushes (about 60–70% or\n"
+             "more) land on the next pane and show everyone where to step. Left: half of pushes reveal a pane unless noted.",
+             "100,000 games per point or cell; 16-minute clock, pushing from minute 7; same bridges throughout. "
+             "\"Per pusher\" = slope of the line. Results: E1_pushers.csv")
     return fig
 
 
@@ -332,17 +367,22 @@ FIGURES = {
     "fig5_clock": fig_clock,
     "fig6_distribution": fig_distribution,
     "fig7_hesitation_dial": fig_hesitation_dial,
+    "fig2_3_pushers_and_breakeven": fig_pushers_and_breakeven,
 }
 
 
 def main(results: str | Path = "results", out: str | Path = "figures") -> None:
     results, out = Path(results), Path(out)
     out.mkdir(exist_ok=True)
+    notes = ["# Figures\n", "Generated by `python -m glass_bridge.figures` from `results/`. "
+             "Data sources and settings, kept off the images:\n"]
     for name, make in FIGURES.items():
         fig = make(results)
         fig.savefig(out / f"{name}.png", dpi=200)
+        notes.append(f"- **{name}.png**: {fig.gb_title}. {fig.gb_source}")
         plt.close(fig)
         print(out / f"{name}.png")
+    (out / "SOURCES.md").write_text("\n".join(notes) + "\n", encoding="utf-8")
 
 
 if __name__ == "__main__":
