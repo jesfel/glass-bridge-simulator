@@ -359,6 +359,71 @@ def fig_hesitation_dial(results: Path):
     return fig
 
 
+def fig_wipeout_map(results: Path):
+    rows = load("E9_clock_x_decision_time", results)
+    d0s = sorted({r["d0"] for r in rows})
+    clocks = sorted({r["clock"] for r in rows})
+    z = np.array([[one(rows, d0=d, clock=c)["p_0_survivors"] * 100 for c in clocks] for d in d0s])
+    fig, ax = plt.subplots(figsize=(10, 6.4))
+    cmap = LinearSegmentedColormap.from_list("seq", [SURFACE, "#f6c9b3", ORANGE, "#8a2e0c"])
+    ax.imshow(z, cmap=cmap, vmin=0, vmax=100, aspect="auto", origin="lower")
+    for i in range(len(d0s)):
+        for j in range(len(clocks)):
+            ax.text(j, i, f"{z[i, j]:.0f}", ha="center", va="center", fontsize=8.5,
+                    color=SURFACE if z[i, j] > 55 else INK_2)
+    ax.set_xticks(range(len(clocks)), [f"{c / 60:.0f}" for c in clocks])
+    ax.set_yticks(range(len(d0s)), [f"{d:.0f} s" for d in d0s])
+    show = clocks.index(SHOW_CLOCK)
+    ax.add_patch(plt.Rectangle((show - 0.5, -0.5), 1, len(d0s), fill=False, edgecolor=INK, linewidth=1.5))
+    ax.text(show, len(d0s) - 0.3, "the show", ha="center", va="bottom", fontsize=9, color=INK)
+    ax.set_xlabel("Time limit (minutes)")
+    ax.set_ylabel("Typical time a leader takes to jump")
+    ax.grid(False)
+    ax.tick_params(left=False, bottom=False)
+    r20, r40 = one(rows, d0=20, clock=SHOW_CLOCK), one(rows, d0=40, clock=SHOW_CLOCK)
+    headline(fig, "Twenty extra seconds of doubt turn a crossing into a massacre",
+             f"Share of games where nobody survives (%). At the show's 16 minutes, leaders who take 20 s wipe out "
+             f"the group\nin {r20['p_0_survivors']:.0%} of games; at 40 s, in {r40['p_0_survivors']:.0%}.",
+             "No pushers; the same typical decision time all game. 100,000 games per cell. "
+             "Results: E9_clock_x_decision_time.csv")
+    fig.subplots_adjust(left=0.1, right=0.97, top=0.8, bottom=0.1)
+    return fig
+
+
+def fig_paired_pusher(results: Path):
+    rows = load("E10_paired_pusher", results)
+    pos = np.arange(16)
+    fig, axes = plt.subplots(1, 2, figsize=(12, 5), sharey=True)
+    for ax, contact in zip(axes, (0.5, 1.0)):
+        ax.axhline(0, color=GRAY_LIGHT, linewidth=1)
+        labels = []
+        for beta, color in ((RUSH, BLUE), (NONE, GRAY_LIGHT), (FREEZE, ORANGE)):
+            d = []
+            for f in pos:
+                on = one(rows, beta=beta, p_contact=contact, focal=f, focal_pushes=1)
+                off = one(rows, beta=beta, p_contact=contact, focal=f, focal_pushes=0)
+                d.append((on[f"survival_pos_{f + 1}"] - off[f"survival_pos_{f + 1}"]) * 100)
+            ax.plot(pos + 1, d, color=color)
+            labels.append((16, d[-1], PRESSURE[beta], color if color != GRAY_LIGHT else GRAY))
+        ax.set_title("Half of pushes reveal a pane" if contact == 0.5 else "Every push reveals the next pane",
+                     loc="left")
+        ax.set_xticks([1, 4, 8, 12, 16])
+        ax.set_xlabel("The pusher's position in the queue")
+        ax.set_xlim(1, 16)
+    axes[0].text(9.5, -12.5, "No pressure", color=GRAY, fontsize=10, fontweight="bold", ha="center")
+    axes[0].text(13.5, -6.2, "Freeze", color=ORANGE, fontsize=10, fontweight="bold")
+    axes[0].text(12.9, -1.9, "Rush", color=BLUE, fontsize=10, fontweight="bold", ha="right")
+    axes[0].set_ylabel("Change in the pusher's own chance\nof surviving (percentage points)")
+    axes[0].set_ylim(-13, 1.5)
+    headline(fig, "Pushing never pays off for the pusher",
+             "The same player, in the same spot, in the same games: choosing to push lowers their own odds at every "
+             "position,\neven when the push helps the group. Players in the middle of the queue lose the most.",
+             "4 other pushers fixed (5 in all, 31%). Paired games with the same random draws; 100,000 games per point. "
+             "Results: E10_paired_pusher.csv")
+    fig.subplots_adjust(left=0.09, right=0.98, top=0.76, bottom=0.13, wspace=0.08)
+    return fig
+
+
 FIGURES = {
     "fig1_baseline": fig_baseline,
     "fig2_pushers": fig_pushers,
@@ -368,6 +433,8 @@ FIGURES = {
     "fig6_distribution": fig_distribution,
     "fig7_hesitation_dial": fig_hesitation_dial,
     "fig2_3_pushers_and_breakeven": fig_pushers_and_breakeven,
+    "fig8_wipeout_map": fig_wipeout_map,
+    "fig9_paired_pusher": fig_paired_pusher,
 }
 
 

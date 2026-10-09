@@ -1,0 +1,13 @@
+{
+  "config": "configs/E9_clock_x_decision_time.toml",
+  "settings": 156,
+  "games": 100000,
+  "seed": 2026,
+  "commit": "ad95261da5810ab98e693041b7ce4d03f141c0c7",
+  "dirty": false,
+  "run_at": "2026-10-09T23:09:10+00:00",
+  "runtime_s": 46.3,
+  "python": "3.13.1",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1"
+}
