@@ -1,0 +1,13 @@
+{
+  "config": "configs/E7_hesitation_dial.toml",
+  "settings": 100,
+  "games": 100000,
+  "seed": 2026,
+  "commit": "02bafa41a8fe0a5768c51f0bf37bfcf85fe2814d",
+  "dirty": false,
+  "run_at": "2026-10-09T00:47:09+00:00",
+  "runtime_s": 34.4,
+  "python": "3.13.1",
+  "numpy": "2.5.3",
+  "scipy": "1.18.1"
+}

@@ -290,6 +290,40 @@ def fig_distribution(results: Path):
     return fig
 
 
+def fig_hesitation_dial(results: Path):
+    rows = load("E7_hesitation_dial", results)
+    betas = np.array(sorted({r["beta"] for r in rows}))
+    d0 = rows[0]["d0"]
+    x = d0 * np.exp(betas)  # median decision time when the clock runs out
+    lines = [(0, 0.5, ORANGE, "-", "No pushers"),
+             (5, 0.5, GRAY_LIGHT, "-", "5 pushers, half of\npushes reveal a pane"),
+             (5, 1.0, BLUE, (0, (4, 2)), "5 pushers, every push\nreveals the next pane")]
+    fig, ax = plt.subplots(figsize=(10, 5.6))
+    labels = []
+    for n, c, color, style, label in lines:
+        y = [one(rows, beta=b, n_pushers=n, p_contact=c)["mean_survivors"] for b in betas]
+        ax.plot(x, y, color=color, linestyle=style)
+        labels.append((x[-1], y[-1], label, color if color != GRAY_LIGHT else GRAY))
+    end_labels(ax, labels, min_gap=0.85, dx=2.0)
+    for b, text, dx, dy, ha in ((-1.5, "rush", 0, 0.35, "center"), (0.0, "no pressure", 0, 0.35, "center"),
+                                (1.5, "freeze", -3, -0.75, "right")):
+        r = one(rows, beta=b, n_pushers=0, p_contact=0.5)
+        ax.plot([d0 * np.exp(b)], [r["mean_survivors"]], "o", color=ORANGE, markersize=6)
+        ax.text(d0 * np.exp(b) + dx, r["mean_survivors"] + dy,
+                f"{text}\nclock runs out in {r['p_clock_ran_out']:.1%}", ha=ha, fontsize=8.5, color=GRAY)
+    ax.set_xlabel("Typical time a leader takes to jump, by the end of the 16 minutes (seconds)")
+    ax.set_ylabel("Survivors, on average")
+    ax.set_xlim(0, 92)
+    ax.set_ylim(0, 7.8)
+    headline(fig, "Every second of hesitation costs lives",
+             "Survivors hold near 7 while leaders take under ~20 seconds; beyond that, the clock takes over.\n"
+             "Once hesitation passes ~40 seconds, pushes that reveal the next pane start to help.",
+             "Median decision time grows (or shrinks) as the clock runs. 100,000 games per point; pushing from "
+             "minute 7. Results: E7_hesitation_dial.csv")
+    fig.subplots_adjust(left=0.07, right=0.78, top=0.77, bottom=0.13)
+    return fig
+
+
 FIGURES = {
     "fig1_baseline": fig_baseline,
     "fig2_pushers": fig_pushers,
@@ -297,6 +331,7 @@ FIGURES = {
     "fig4_pusher_gain": fig_pusher_gain,
     "fig5_clock": fig_clock,
     "fig6_distribution": fig_distribution,
+    "fig7_hesitation_dial": fig_hesitation_dial,
 }
 
 
