@@ -85,6 +85,7 @@ def summarize(b: Batch) -> dict[str, float]:
     row |= {f"survival_pos_{k + 1}": float(x) for k, x in enumerate(b.survival_by_position())}
     row |= {f"share_{name}": x for name, x in b.cause_shares().items()}
     row["pusher_survival"], row["nonpusher_survival"] = b.pusher_survival()
+    row["p_clock_ran_out"] = float((b.outcome == Outcome.TIMEOUT).any(axis=1).mean())
     return row
 
 
