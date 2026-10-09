@@ -1,0 +1,33 @@
+# Robustness of "pushing helps a frozen group": E5 repeated with every push revealing the next pane.
+# Proposed 2026-10-08; keep or discard after review.
+# Each [[vary]] block lists values zipped together; the default setting is always included.
+seed = 2026
+games = 100_000
+
+[base]
+p_contact = 1.0
+
+[grid]
+n_pushers = [0, 5]
+beta = [-1.5, 0.0, 1.5]
+
+[[vary]]
+d0 = [10, 15, 25, 30, 35]
+
+[[vary]]
+sigma = [0.5, 0.75, 1.25, 1.5]
+
+[[vary]]
+t_move = [2, 4, 5]
+
+[[vary]]
+patience = [5, 10, 20, 25, 30]
+
+[[vary]]
+# drag + backfire share 0-0.6, split evenly (default 0.4 = 0.2 + 0.2)
+p_land = [1.0, 0.9, 0.8, 0.7, 0.5, 0.4]
+p_drag = [0.0, 0.05, 0.1, 0.15, 0.25, 0.3]
+p_backfire = [0.0, 0.05, 0.1, 0.15, 0.25, 0.3]
+
+[[vary]]
+delay = ["gamma"]
