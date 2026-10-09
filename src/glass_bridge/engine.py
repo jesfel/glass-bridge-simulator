@@ -38,7 +38,11 @@ class GameResult:
 def play_game(p: Params, d: GameDraws, log: bool = True) -> GameResult:
     N, P, T = p.n_steps, p.n_players, p.clock
     bridge = tuple(d.bridge)
-    pushers = frozenset(d.order[: p.n_pushers])
+    if p.focal < 0:
+        pushers = frozenset(d.order[: p.n_pushers])
+    else:  # the other pushers are the same whether or not the focal player pushes
+        others = [x for x in d.order if x != p.focal][: p.n_pushers]
+        pushers = frozenset(others + [p.focal] * p.focal_pushes)
     n_hesitations = n_pushes = 0
 
     outcome: list[Outcome | None] = [None] * P

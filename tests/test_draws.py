@@ -48,3 +48,14 @@ def test_gamma_scenario_runs_and_differs():
     assert not np.array_equal(a, b)
     with pytest.raises(ValueError):
         Params(delay="weibull")
+
+
+def test_focal_player_toggles_without_moving_other_pushers():
+    off = run_batch(Params(n_pushers=4, focal=6, focal_pushes=0), 300, seed=7).is_pusher
+    on = run_batch(Params(n_pushers=4, focal=6, focal_pushes=1), 300, seed=7).is_pusher
+    assert not off[:, 6].any() and on[:, 6].all()
+    others = np.arange(16) != 6
+    np.testing.assert_array_equal(off[:, others], on[:, others])
+    assert (off.sum(axis=1) == 4).all() and (on.sum(axis=1) == 5).all()
+    with pytest.raises(ValueError):
+        Params(n_pushers=16, focal=0)

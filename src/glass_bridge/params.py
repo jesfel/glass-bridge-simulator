@@ -32,6 +32,8 @@ class Params:
 
     # Pushing
     n_pushers: int = 0        # exact count, placed at random in the queue
+    focal: int = -1           # paired test: this queue position is set aside from the random pushers...
+    focal_pushes: int = 0     # ...and is a pusher (1) or not (0); -1 = no focal player
     patience: float = 15.0    # a pusher pushes a leader stalled longer than this (s)
     t_start: float = 420.0    # nobody pushes before this time (s); the 7-minute rule
     t_push: float = 3.0       # duration of the struggle (s)
@@ -45,6 +47,9 @@ class Params:
             raise ValueError("need n_steps >= 0 and n_players >= 1")
         if not 0 <= self.n_pushers <= self.n_players:
             raise ValueError("n_pushers must be between 0 and n_players")
+        if self.focal >= 0 and (self.focal >= self.n_players or self.n_pushers > self.n_players - 1
+                                or self.focal_pushes not in (0, 1)):
+            raise ValueError("focal must be a queue position, with n_pushers <= n_players - 1 and focal_pushes 0 or 1")
         if not math.isclose(self.p_land + self.p_drag + self.p_backfire, 1.0):
             raise ValueError("p_land + p_drag + p_backfire must equal 1")
         for name in ("p_land", "p_drag", "p_backfire", "p_contact"):

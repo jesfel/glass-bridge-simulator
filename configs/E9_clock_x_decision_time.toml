@@ -1,0 +1,12 @@
+# Clock x typical decision time (D17). Constant hesitation (beta = 0, so the median delay is d0 all game),
+# no pushers. Where does the clock start wiping out groups? Include in the article or not, decided later.
+seed = 2026
+games = 100_000
+
+[base]
+beta = 0.0
+n_pushers = 0
+
+[grid]
+d0 = [5, 10, 15, 20, 25, 30, 35, 40, 45, 50, 60, 75, 90]
+clock = [480, 600, 720, 840, 960, 1080, 1200, 1320, 1440, 1560, 1680, 1800]
