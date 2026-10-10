@@ -5,6 +5,9 @@ A Monte Carlo simulator of the Glass Stepping Stones game from *Squid Game*, bui
 
 > Work in progress. Private until the first article is published.
 
+**How it works, in full:** [METHODOLOGY.md](METHODOLOGY.md) (the model, hesitation and pushing rules, random
+numbers, validation, every experiment and output column, limitations).
+
 ## Quick start
 
 ```bash
@@ -71,6 +74,7 @@ src/glass_bridge/
   exact.py        exact baseline odds (binomial and Markov chain)
   experiments.py  batch runner, summaries, sweeps, command line
   figures.py      article figures from results/ (needs the `figures` extra)
+METHODOLOGY.md    the model and experiments in full
 configs/          one TOML file per experiment
 results/          sweep summaries (CSV) and provenance (JSON)
 figures/          article figures (PNG)
@@ -80,5 +84,8 @@ tests/            exact-odds validation, rule checks, reproducibility
 ## Prior work
 
 The ideal-play odds are well known. This project reproduces them as validation and builds on:
-Eric Pham-Hung (Medium, 2021), John Paul Helveston (2021, step delays and a clock), Aster Hu (2021),
-Henk Tijms (Markov chain treatment) and others, credited in the articles.
+
+- Eric Pham-Hung, [Squid Game: a data scientist's take on surviving the glass bridge](https://medium.com/@ericphamhung_76823/squid-game-a-data-scientists-take-on-surviving-the-glass-bridge-f143f739ebb5) (2021)
+- John Paul Helveston, [Simulating the Squid Game bridge scene in R](https://www.jhelvy.com/blog/2021-10-19-monte-carlo-bridge-game/) (2021; step delays and a clock)
+- Aster Hu, [Squid Game: The probability of Glass Bridge](https://www.asterhu.com/post/2021-11-04-squid-game-probability/) (2021)
+- Henk Tijms, [Markov chain treatment](https://kraket.nl/f/files/download/sector/2021-2022/tutorialmarkovsector.pdf)
