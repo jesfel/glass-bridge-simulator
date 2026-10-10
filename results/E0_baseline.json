@@ -3,10 +3,10 @@
   "settings": 1,
   "games": 100000,
   "seed": 2026,
-  "commit": "beba75eb1a97c4abafe03dec0b07373326fcdfa6",
+  "commit": "6d104506f3be3f79c9c3561aafdfdd3a7c52c67e",
   "dirty": false,
-  "run_at": "2026-10-09T00:31:16+00:00",
-  "runtime_s": 2.6,
+  "run_at": "2026-10-10T02:27:04+00:00",
+  "runtime_s": 2.5,
   "python": "3.13.1",
   "numpy": "2.5.3",
   "scipy": "1.18.1"
