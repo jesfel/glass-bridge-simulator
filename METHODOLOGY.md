@@ -26,7 +26,9 @@ tests. Every parameter named here lives in `Params` (`src/glass_bridge/params.py
 6. **End of the bridge.** When the frontier reaches step 18, the leader walks off and each remaining
    player follows `t_move` behind the one in front. Anyone exiting after the clock is a timeout.
 
-Jumps themselves take no time; time passes while walking, hesitating and pushing.
+Jumps themselves take no time; time passes while walking, hesitating and pushing. Only the gap is
+walked: after a fall, the next player was standing one step behind the fallen leader, so they walk
+the 2 steps to the newly revealed pane, not the whole known path.
 
 **Outcomes** (one per player): survived, glass (chose the breaking pane), pushed, drag, backfire,
 timeout. The event log (`trace(params, seed, game)`) records every walk, hesitation, push, jump,
@@ -39,6 +41,8 @@ Only a leader facing an **unknown** pane hesitates. The decision time is random:
 - **Distribution:** lognormal by default, with **median** `d0` and spread `sigma` (the standard
   deviation of the log). With `sigma = 1`, one decision in twenty takes about 5.2 times the median.
 - **"Typical decision time"** in the articles means the **median** `d0`: half of decisions are faster.
+  It is not the average: with `sigma = 1` the mean is exp(1/2) ≈ 1.65 times the median, so a typical
+  40 s decision corresponds to an average of about 66 s, pulled up by the occasional long freeze.
 - **Pressure** (`beta`): the median becomes `d0 · exp(beta · u)`, where `u` is the share of the clock
   already used when the leader reaches the pane. `beta < 0`: players rush as time runs out; `beta = 0`:
   constant hesitation; `beta > 0`: they freeze. Rush, no pressure and freeze are `beta = −1.5, 0, +1.5`.
@@ -85,6 +89,10 @@ how many games are run.
 - **Rule checks** (`tests/`): forced pushes that always reveal a pane don't change survival without a
   clock; a tiny clock kills everyone; tiny bridges behave; nobody pushes before `t_start`; every player
   ends exactly once; invalid settings are rejected.
+- **Timing** (`tests/test_timing.py`, hand-built draws so every time is exact): a perfect crossing exits
+  at 183 s, then every 3 s; with a 200 s clock the first six exit and ten time out; reaching step 18
+  at 180 s with a 182 s clock is not enough (stepping off takes 3 s); a decision that would end after
+  the clock means a timeout; after a fall the next leader walks only the 2-step gap.
 - **Reproducibility:** shared draws across scenarios, `trace` replays any batch game, and re-running a
   sweep gives a byte-identical results file.
 
