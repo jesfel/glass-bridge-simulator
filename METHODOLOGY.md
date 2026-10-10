@@ -99,6 +99,8 @@ how many games are run.
 ## 7. Experiments
 
 All experiments use seed 2026 and 100,000 games per setting: 1,181 settings, 118.1 million games.
+Article 1 rests on E0, E9 and the robustness runs E3, E5 and E7: 503 settings, 50.3 million games
+(15.6 million of them in E9, the main result). The rest are pushing experiments for Article 2.
 
 | ID | Config | Question | Used in |
 |---|---|---|---|
