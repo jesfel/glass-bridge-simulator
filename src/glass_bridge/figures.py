@@ -421,6 +421,34 @@ def fig_wipeout_map(results: Path):
     return fig
 
 
+def fig_cliff(results: Path):
+    """Article 1 opening chart: the 16-minute column of E9 as one curve."""
+    rows = load("E9_clock_x_decision_time", results)
+    d0s = np.array(sorted({r["d0"] for r in rows}))
+    p0 = np.array([one(rows, d0=d, clock=SHOW_CLOCK)["p_0_survivors"] * 100 for d in d0s])
+    fig, ax = plt.subplots(figsize=(10, 5.6))
+    ax.axvspan(20, 40, color=BAND, zorder=0)
+    ax.plot(d0s, p0, color=ORANGE)
+    for d, dy, ha in ((20, 12, "right"), (40, -14, "left")):
+        p = p0[list(d0s).index(d)]
+        ax.plot([d], [p], "o", color=ORANGE, markersize=8)
+        ax.annotate(f"{d} s: nobody survives\nin {p:.0f}% of games", (d, p), xytext=(d + (-2 if ha == "right" else 2), p + dy),
+                    ha=ha, va="center", fontsize=10.5, color=ORANGE, fontweight="bold")
+    ax.text(30, 103, "the cliff", ha="center", va="bottom", fontsize=9.5, color=GRAY)
+    ax.set_xlim(0, 92)
+    ax.set_ylim(0, 108)
+    ax.set_yticks([0, 25, 50, 75, 100], ["0%", "25%", "50%", "75%", "100%"])
+    ax.set_xlabel("Typical time the player at the front takes to choose a pane (seconds)")
+    ax.set_ylabel("Games where nobody survives")
+    headline(fig, "Twenty seconds between a crossing and a massacre",
+             "Squid Game's Glass Bridge with the show's 16-minute clock, simulated 100,000 times at each decision time.\n"
+             "Under ideal play, 7 of 16 players survive on average.",
+             "No pushers; the leader's typical (median) decision time stays the same all game. "
+             "Results: E9_clock_x_decision_time.csv (16-minute column)")
+    fig.subplots_adjust(left=0.09, right=0.97, top=0.77, bottom=0.12)
+    return fig
+
+
 def fig_paired_pusher(results: Path):
     rows = load("E10_paired_pusher", results)
     pos = np.arange(16)
@@ -467,6 +495,7 @@ FIGURES = {
     "fig2_3_pushers_and_breakeven": fig_pushers_and_breakeven,
     "fig8_wipeout_map": fig_wipeout_map,
     "fig9_paired_pusher": fig_paired_pusher,
+    "fig10_cliff": fig_cliff,
 }
 
 
