@@ -3,7 +3,7 @@
 A Monte Carlo simulator of the Glass Stepping Stones game from *Squid Game*, built to answer a question:
 **the math says ~7 of 16 players survive. In the show, 3 do. How much does being human cost?**
 
-> Work in progress. Private until the first article is published.
+**Articles:** *The Deadliest Thing in Squid Game Wasn't the Glass. It Was Hesitation.* [link added on publication]
 
 **How it works, in full:** [METHODOLOGY.md](METHODOLOGY.md) (the model, hesitation and pushing rules, random
 numbers, validation, every experiment and output column, limitations).
@@ -77,7 +77,7 @@ src/glass_bridge/
 METHODOLOGY.md    the model and experiments in full
 configs/          one TOML file per experiment
 results/          sweep summaries (CSV) and provenance (JSON)
-figures/          article figures (PNG)
+figures/          figures (PNG); figures/article/ holds the phone-readable versions used in the articles
 tests/            exact-odds validation, rule checks, reproducibility
 ```
 

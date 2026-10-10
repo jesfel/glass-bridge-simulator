@@ -10,6 +10,7 @@ and the key point is annotated on the chart.
 from __future__ import annotations
 
 import csv
+import textwrap
 from pathlib import Path
 
 import matplotlib
@@ -64,9 +65,9 @@ def cost_per_pusher(rows: list[dict], **where) -> float:
 def headline(fig, title: str, subtitle: str, source: str) -> None:
     """Title and subtitle on the image. The source note stays off the image (article version)
     and goes to figures/SOURCES.md, so every figure still traces to its results file."""
-    fig.text(0.012, 0.975, title, ha="left", va="top", fontsize=15, fontweight="bold", color=INK)
-    fig.text(0.012, 0.905, subtitle, ha="left", va="top", fontsize=10.5, color=INK_2, linespacing=1.4)
-    fig.gb_title, fig.gb_source = title, source
+    t = fig.text(0.012, 0.975, title, ha="left", va="top", fontsize=15, fontweight="bold", color=INK)
+    sub = fig.text(0.012, 0.905, subtitle, ha="left", va="top", fontsize=10.5, color=INK_2, linespacing=1.4)
+    fig.gb_title, fig.gb_source, fig.gb_header = title, source, (t, sub)
 
 
 def end_labels(ax, items: list[tuple[float, float, str, str]], min_gap: float, dx: float) -> None:
@@ -300,26 +301,32 @@ def fig_clock(results: Path):
     return fig
 
 
-def fig_distribution_hesitation(results: Path):
-    """Article 1 version (D19): one model of hesitation, constant all game (E9), at the show's clock."""
+def fig_distribution_hesitation(results: Path, stacked: bool = False):
+    """Article 1 version (D19): one model of hesitation, constant all game (E9), at the show's clock.
+    stacked=True puts the three panels in a column (article version, for phones)."""
     rows = load("E9_clock_x_decision_time", results)
     k = np.arange(N_PLAYERS + 1)
     delays = (15, 20, 40)
-    fig, axes = plt.subplots(1, 3, figsize=(12, 5.2), sharey=True)
+    if stacked:
+        fig, axes = plt.subplots(3, 1, figsize=(7.2, 9.0), sharex=True, sharey=True)
+    else:
+        fig, axes = plt.subplots(1, 3, figsize=(12, 5.2), sharey=True)
     for ax, d in zip(axes, delays):
         r = one(rows, d0=float(d), clock=SHOW_CLOCK)
         p = np.array([r[f"p_{i}_survivors"] for i in k]) * 100
         slow = d == delays[-1]
         ax.bar(k, p, width=0.75, color=[ORANGE if (slow and i == 0) else GRAY_LIGHT for i in k])
-        ax.set_title(f"{d} seconds per decision\n{r['mean_survivors']:.1f} survivors on average", loc="left",
+        sep = ": " if stacked else "\n"
+        ax.set_title(f"{d} seconds per decision{sep}{r['mean_survivors']:.1f} survivors on average", loc="left",
                      color=ORANGE if slow else INK, linespacing=1.4)
         ax.set_xticks([0, 3, 7, 10, 16])
-        ax.set_xlabel("Survivors in one game")
+        if not stacked or slow:
+            ax.set_xlabel("Survivors in one game")
         if slow:
             ax.annotate(f"nobody survives\nin {p[0]:.0f}% of games", (0.5, p[0] * 0.95), xytext=(3, p[0] * 0.8),
                         fontsize=9.5, color=ORANGE, fontweight="bold", va="top")
     axes[0].set_yticks([0, 20, 40, 60, 80], ["0%", "20%", "40%", "60%", "80%"])
-    axes[0].set_ylabel("Share of games")
+    axes[1 if stacked else 0].set_ylabel("Share of games")
     r20 = one(rows, d0=20.0, clock=SHOW_CLOCK)
     headline(fig, "Slow down, and the whole group dies",
              f"At 20 seconds per decision, nobody survives in {r20['p_0_survivors']:.0%} of games. Double it, and "
@@ -327,7 +334,10 @@ def fig_distribution_hesitation(results: Path):
              "it wipes out whole games.",
              "16-minute clock, no pushers; the leader's typical (median) decision time stays the same all game. "
              "100,000 games each. Results: E9_clock_x_decision_time.csv")
-    fig.subplots_adjust(left=0.07, right=0.98, bottom=0.14, top=0.67, wspace=0.08)
+    if stacked:
+        fig.subplots_adjust(left=0.12, right=0.97, bottom=0.07, top=0.8, hspace=0.45)
+    else:
+        fig.subplots_adjust(left=0.07, right=0.98, bottom=0.14, top=0.67, wspace=0.08)
     return fig
 
 
@@ -429,10 +439,11 @@ def fig_cliff(results: Path):
     fig, ax = plt.subplots(figsize=(10, 5.6))
     ax.axvspan(20, 40, color=BAND, zorder=0)
     ax.plot(d0s, p0, color=ORANGE)
-    for d, dy, ha in ((20, 12, "right"), (40, -14, "left")):
+    for d, dy, ha in ((20, 30, "right"), (40, -14, "left")):
         p = p0[list(d0s).index(d)]
         ax.plot([d], [p], "o", color=ORANGE, markersize=8)
-        ax.annotate(f"{d} s: nobody survives\nin {p:.0f}% of games", (d, p), xytext=(d + (-2 if ha == "right" else 2), p + dy),
+        text = f"{d} s:\nnobody survives\nin {p:.0f}% of games" if ha == "right" else f"{d} s: nobody survives\nin {p:.0f}% of games"
+        ax.annotate(text, (d, p), xytext=(d + (-2 if ha == "right" else 2), p + dy),
                     ha=ha, va="center", fontsize=10.5, color=ORANGE, fontweight="bold")
     ax.text(30, 103, "the cliff", ha="center", va="bottom", fontsize=9.5, color=GRAY)
     ax.set_xlim(0, 92)
@@ -511,6 +522,56 @@ def main(results: str | Path = "results", out: str | Path = "figures") -> None:
         plt.close(fig)
         print(out / f"{name}.png")
     (out / "SOURCES.md").write_text("\n".join(notes) + "\n", encoding="utf-8")
+    article(results, out / "article")
+
+
+# Article versions: the same figure on a smaller canvas with the same font sizes, so text stays
+# readable when Medium scales the image to its column (and to a phone screen).
+ARTICLE = {  # name: (canvas scale, extra arguments)
+    "fig10_cliff": (0.72, {}),
+    "fig1_baseline": (0.72, {}),
+    "fig6_distribution": (1.0, {"stacked": True}),
+    "fig8_wipeout_map": (0.78, {}),
+}
+
+
+def wrap(text: str, width_in: float, fontsize: float) -> str:
+    chars = max(20, int(width_in * 72 / (fontsize * 0.55)))
+    return "\n".join(textwrap.wrap(" ".join(text.split()), chars))
+
+
+def fit_header(fig) -> None:
+    """Re-wrap title and subtitle to the canvas width and move the plots down below them."""
+    w, h = fig.get_size_inches()
+    title, sub = fig.gb_header
+    title.set_text(wrap(title.get_text(), w * 0.97, 15))
+    sub.set_text(wrap(sub.get_text(), w * 0.97, 10.5))
+    n_title, n_sub = title.get_text().count("\n") + 1, sub.get_text().count("\n") + 1
+    top_in = 0.12
+    title.set_y(1 - top_in / h)
+    sub_in = top_in + n_title * 15 * 1.25 / 72 + 0.08
+    sub.set_y(1 - sub_in / h)
+    header_in = sub_in + n_sub * 10.5 * 1.45 / 72 + 0.45  # room for panel titles below the header
+    axes = [ax for ax in fig.axes if ax.get_label() != "<colorbar>"]
+    bottom = min(ax.get_position().y0 for ax in axes)
+    old_top = max(ax.get_position().y1 for ax in axes)
+    new_top = min(old_top, 1 - header_in / h)
+    k = (new_top - bottom) / (old_top - bottom)
+    for ax in fig.axes:
+        b = ax.get_position()
+        ax.set_position([b.x0, bottom + (b.y0 - bottom) * k, b.width, b.height * k])
+
+
+def article(results: Path, out: Path) -> None:
+    out.mkdir(parents=True, exist_ok=True)
+    for name, (scale, kwargs) in ARTICLE.items():
+        fig = FIGURES[name](results, **kwargs)
+        w, h = fig.get_size_inches()
+        fig.set_size_inches(w * scale, h * scale)
+        fit_header(fig)
+        fig.savefig(out / f"{name}.png", dpi=250, bbox_inches="tight", pad_inches=0.15)
+        plt.close(fig)
+        print(out / f"{name}.png")
 
 
 if __name__ == "__main__":
