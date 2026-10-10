@@ -3,7 +3,7 @@
 A Monte Carlo simulator of the Glass Stepping Stones game from *Squid Game*, built to answer a question:
 **the math says ~7 of 16 players survive. In the show, 3 do. How much does being human cost?**
 
-**Articles:** *The Deadliest Thing in Squid Game Wasn't the Glass. It Was Hesitation.* [link added on publication]
+**Articles:** [The Deadliest Thing in Squid Game Wasn't the Glass. It Was Hesitation.](https://medium.com/@jesfel/the-deadliest-thing-in-squid-game-wasnt-the-glass-it-was-hesitation-bc64ab3df9f5) (Medium, October 2026)
 
 **How it works, in full:** [METHODOLOGY.md](METHODOLOGY.md) (the model, hesitation and pushing rules, random
 numbers, validation, every experiment and output column, limitations).
